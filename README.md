@@ -56,8 +56,9 @@ trabalhodistribuidaseis/
 │           ├── graphql/server.ts
 │           └── grpc/server.ts
 ├── benchmark/
-│   ├── smoke_test.py               # Validação funcional (CRUD + 5 consultas) nas 8 APIs
-│   └── load_test.py                # Suite de testes de carga (W1, W2, W3 × 10/50/100 VUs)
+│   ├── smoke_test.py               # Validação funcional (CRUD + 5 consultas + bordas) nas 8 APIs
+│   ├── load_test.py                # Suite de testes de carga (W1: 50/200/400 VUs; W2/W3: 100 VUs)
+│   └── stress_test.py              # Teste de estresse até o limite (rampa 10 → 1000 VUs)
 ├── analysis/
 │   └── generate_charts.py          # Gera 7 gráficos PNG (300 DPI)
 ├── results/
@@ -82,11 +83,11 @@ docker compose up -d
 # 2. Validar funcionalmente as 8 implementações (5 consultas obrigatórias + CRUD completo)
 docker compose --profile tools run --rm runner python benchmark/smoke_test.py
 
-# 3. Executar toda a bateria de testes de carga (40 cenários medidos)
-docker compose --profile tools run --rm runner python benchmark/load_test.py --duration 5 --warmup 1
+# 3. Executar toda a bateria de testes de carga (40 cenários × 2 repetições, até 400 VUs)
+docker compose --profile tools run --rm runner python benchmark/load_test.py --duration 3 --warmup 1 --runs 2
 
 # 3b. Executar o teste de estresse até o limite (rampa 10 → 1000 VUs / pontos de ruptura)
-docker compose --profile tools run --rm runner python benchmark/stress_test.py --duration 4
+docker compose --profile tools run --rm runner python benchmark/stress_test.py --duration 3
 
 # 4. Gerar os 7 gráficos em alta resolução (results/charts/)
 docker compose --profile tools run --rm runner python analysis/generate_charts.py
