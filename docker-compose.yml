@@ -1,0 +1,178 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: streaming-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-streaming}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-streaming}
+      POSTGRES_DB: ${POSTGRES_DB:-music_streaming}
+    command: ["postgres", "-c", "max_connections=300"]
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U streaming -d music_streaming"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # ==================== SERVIÇOS PYTHON (3.12) ====================
+
+  python-rest:
+    build:
+      context: .
+      dockerfile: services/python/Dockerfile
+    container_name: streaming-python-rest
+    command: ["uvicorn", "apis.rest_app:app", "--host", "0.0.0.0", "--port", "8001", "--no-access-log"]
+    environment:
+      DATABASE_URL: postgresql://streaming:streaming@postgres:5432/music_streaming
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+
+  python-soap:
+    build:
+      context: .
+      dockerfile: services/python/Dockerfile
+    container_name: streaming-python-soap
+    command: ["uvicorn", "apis.soap_app:app", "--host", "0.0.0.0", "--port", "8002", "--no-access-log"]
+    environment:
+      DATABASE_URL: postgresql://streaming:streaming@postgres:5432/music_streaming
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+
+  python-graphql:
+    build:
+      context: .
+      dockerfile: services/python/Dockerfile
+    container_name: streaming-python-graphql
+    command: ["uvicorn", "apis.graphql_app:app", "--host", "0.0.0.0", "--port", "8003", "--no-access-log"]
+    environment:
+      DATABASE_URL: postgresql://streaming:streaming@postgres:5432/music_streaming
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+
+  python-grpc:
+    build:
+      context: .
+      dockerfile: services/python/Dockerfile
+    container_name: streaming-python-grpc
+    command: ["python", "apis/grpc_server.py"]
+    environment:
+      DATABASE_URL: postgresql://streaming:streaming@postgres:5432/music_streaming
+      PORT: "50051"
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+
+  # ==================== SERVIÇOS NODE.JS (TYPESCRIPT) ====================
+
+  node-rest:
+    build:
+      context: .
+      dockerfile: services/node/Dockerfile
+    container_name: streaming-node-rest
+    command: ["npm", "run", "start:rest"]
+    environment:
+      DATABASE_URL: postgresql://streaming:streaming@postgres:5432/music_streaming
+      PORT: "8101"
+    ports:
+      - "8101:8101"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+
+  node-soap:
+    build:
+      context: .
+      dockerfile: services/node/Dockerfile
+    container_name: streaming-node-soap
+    command: ["npm", "run", "start:soap"]
+    environment:
+      DATABASE_URL: postgresql://streaming:streaming@postgres:5432/music_streaming
+      PORT: "8102"
+    ports:
+      - "8102:8102"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+
+  node-graphql:
+    build:
+      context: .
+      dockerfile: services/node/Dockerfile
+    container_name: streaming-node-graphql
+    command: ["npm", "run", "start:graphql"]
+    environment:
+      DATABASE_URL: postgresql://streaming:streaming@postgres:5432/music_streaming
+      PORT: "8103"
+    ports:
+      - "8103:8103"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+
+  node-grpc:
+    build:
+      context: .
+      dockerfile: services/node/Dockerfile
+    container_name: streaming-node-grpc
+    command: ["npm", "run", "start:grpc"]
+    environment:
+      DATABASE_URL: postgresql://streaming:streaming@postgres:5432/music_streaming
+      PORT: "50052"
+    ports:
+      - "50052:50052"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: 1.0
+    mem_limit: 512m
+
+  # ==================== BENCHMARK, GRÁFICOS & SLIDES ====================
+
+  runner:
+    build:
+      context: .
+      dockerfile: benchmark/Dockerfile
+    container_name: streaming-runner
+    profiles: ["tools"]
+    volumes:
+      - ./benchmark:/app/benchmark
+      - ./analysis:/app/analysis
+      - ./results:/app/results
+      - ./contracts:/app/contracts:ro
+    depends_on:
+      - python-rest
+      - python-soap
+      - python-graphql
+      - python-grpc
+      - node-rest
+      - node-soap
+      - node-graphql
+      - node-grpc

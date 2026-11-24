@@ -1,0 +1,26 @@
+{
+  "name": "music-streaming-node",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start:rest": "node dist/rest/server.js",
+    "start:soap": "node dist/soap/server.js",
+    "start:graphql": "node dist/graphql/server.js",
+    "start:grpc": "node dist/grpc/server.js"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.11.3",
+    "@grpc/grpc-js": "^1.12.5",
+    "@grpc/proto-loader": "^0.7.13",
+    "fastify": "^5.2.0",
+    "graphql": "^16.9.0",
+    "pg": "^8.13.1",
+    "soap": "^1.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package musicstreaming;
+
+service MusicStreamingService {
+  // Usuários (CRUD + Consulta #1)
+  rpc ListUsers (Empty) returns (UserList);
+  rpc GetUser (IdRequest) returns (User);
+  rpc CreateUser (CreateUserRequest) returns (User);
+  rpc UpdateUser (UpdateUserRequest) returns (User);
+  rpc DeleteUser (IdRequest) returns (DeleteResponse);
+
+  // Músicas (CRUD + Consulta #2)
+  rpc ListSongs (Empty) returns (SongList);
+  rpc GetSong (IdRequest) returns (Song);
+  rpc CreateSong (CreateSongRequest) returns (Song);
+  rpc UpdateSong (UpdateSongRequest) returns (Song);
+  rpc DeleteSong (IdRequest) returns (DeleteResponse);
+
+  // Playlists (CRUD + Associações)
+  rpc GetPlaylist (IdRequest) returns (Playlist);
+  rpc CreatePlaylist (CreatePlaylistRequest) returns (Playlist);
+  rpc UpdatePlaylist (UpdatePlaylistRequest) returns (Playlist);
+  rpc DeletePlaylist (IdRequest) returns (DeleteResponse);
+  rpc AddSongToPlaylist (PlaylistSongRequest) returns (Playlist);
+  rpc RemoveSongFromPlaylist (PlaylistSongRequest) returns (Playlist);
+
+  // Consultas obrigatórias (#3, #4, #5)
+  rpc ListUserPlaylists (IdRequest) returns (PlaylistList);
+  rpc ListPlaylistSongs (IdRequest) returns (SongList);
+  rpc ListPlaylistsBySong (IdRequest) returns (PlaylistList);
+}
+
+message Empty {}
+
+message IdRequest {
+  int32 id = 1;
+}
+
+message DeleteResponse {
+  bool deleted = 1;
+}
+
+message User {
+  int32 id = 1;
+  string name = 2;
+  int32 age = 3;
+}
+
+message UserList {
+  repeated User users = 1;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  int32 age = 2;
+}
+
+message UpdateUserRequest {
+  int32 id = 1;
+  string name = 2;
+  int32 age = 3;
+}
+
+message Song {
+  int32 id = 1;
+  string name = 2;
+  string artist = 3;
+}
+
+message SongList {
+  repeated Song songs = 1;
+}
+
+message CreateSongRequest {
+  string name = 1;
+  string artist = 2;
+}
+
+message UpdateSongRequest {
+  int32 id = 1;
+  string name = 2;
+  string artist = 3;
+}
+
+message Playlist {
+  int32 id = 1;
+  string name = 2;
+  int32 user_id = 3;
+  repeated Song songs = 4;
+}
+
+message PlaylistList {
+  repeated Playlist playlists = 1;
+}
+
+message CreatePlaylistRequest {
+  string name = 1;
+  int32 user_id = 2;
+  repeated int32 song_ids = 3;
+}
+
+message UpdatePlaylistRequest {
+  int32 id = 1;
+  string name = 2;
+  repeated int32 song_ids = 3;
+}
+
+message PlaylistSongRequest {
+  int32 playlist_id = 1;
+  int32 song_id = 2;
+}

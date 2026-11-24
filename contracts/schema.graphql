@@ -1,0 +1,58 @@
+type User {
+  id: Int!
+  name: String!
+  age: Int!
+  playlists: [Playlist!]!
+}
+
+type Song {
+  id: Int!
+  name: String!
+  artist: String!
+  playlists: [Playlist!]!
+}
+
+type Playlist {
+  id: Int!
+  name: String!
+  userId: Int!
+  user: User!
+  songs: [Song!]!
+}
+
+type Query {
+  # Consulta #1: Listar os dados de todos os usuários
+  users: [User!]!
+  user(id: Int!): User
+
+  # Consulta #2: Listar os dados de todas as músicas
+  songs: [Song!]!
+  song(id: Int!): Song
+
+  playlist(id: Int!): Playlist
+
+  # Consulta #3: Listar todas as playlists de um determinado usuário
+  userPlaylists(userId: Int!): [Playlist!]!
+
+  # Consulta #4: Listar todas as músicas de uma determinada playlist
+  playlistSongs(playlistId: Int!): [Song!]!
+
+  # Consulta #5: Listar todas as playlists que contêm uma determinada música
+  playlistsBySong(songId: Int!): [Playlist!]!
+}
+
+type Mutation {
+  createUser(name: String!, age: Int!): User!
+  updateUser(id: Int!, name: String!, age: Int!): User!
+  deleteUser(id: Int!): Boolean!
+
+  createSong(name: String!, artist: String!): Song!
+  updateSong(id: Int!, name: String!, artist: String!): Song!
+  deleteSong(id: Int!): Boolean!
+
+  createPlaylist(userId: Int!, name: String!, songIds: [Int!]!): Playlist!
+  updatePlaylist(id: Int!, name: String!, songIds: [Int!]): Playlist!
+  deletePlaylist(id: Int!): Boolean!
+  addSongToPlaylist(playlistId: Int!, songId: Int!): Playlist!
+  removeSongFromPlaylist(playlistId: Int!, songId: Int!): Playlist!
+}
