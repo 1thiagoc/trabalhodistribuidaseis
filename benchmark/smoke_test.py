@@ -34,15 +34,21 @@ def xml_find_all_local(root: etree._Element, local: str):
 
 async def test_rest(name: str, base_url: str):
     async with httpx.AsyncClient(base_url=base_url, timeout=10.0) as client:
-        # 5 consultas obrigatórias
+        # 5 consultas obrigatórias (dataset em escala + >= 6 atributos por elemento)
         r_users = await client.get("/users")
-        assert r_users.status_code == 200 and len(r_users.json()) >= 50, f"{name}: list users failed"
+        users_data = r_users.json()
+        assert r_users.status_code == 200 and len(users_data) >= 500, f"{name}: list users failed"
+        assert {"id", "name", "age", "email", "country", "plan_type", "created_at"}.issubset(users_data[0].keys())
 
         r_songs = await client.get("/songs")
-        assert r_songs.status_code == 200 and len(r_songs.json()) >= 100, f"{name}: list songs failed"
+        songs_data = r_songs.json()
+        assert r_songs.status_code == 200 and len(songs_data) >= 1000, f"{name}: list songs failed"
+        assert {"id", "name", "artist", "album", "genre", "duration_sec", "release_year"}.issubset(songs_data[0].keys())
 
         r_upl = await client.get("/users/1/playlists")
-        assert r_upl.status_code == 200 and len(r_upl.json()) >= 1, f"{name}: user playlists failed"
+        upl_data = r_upl.json()
+        assert r_upl.status_code == 200 and len(upl_data) >= 1, f"{name}: user playlists failed"
+        assert {"id", "name", "user_id", "description", "is_public", "created_at"}.issubset(upl_data[0].keys())
 
         r_pls = await client.get("/playlists/1/songs")
         assert r_pls.status_code == 200 and len(r_pls.json()) >= 1, f"{name}: playlist songs failed"
@@ -108,8 +114,8 @@ async def test_soap(name: str, url: str):
             return etree.fromstring(resp.content)
 
         # 5 consultas obrigatórias
-        assert len(xml_find_all_local(await call("ListUsers"), "users")) >= 50
-        assert len(xml_find_all_local(await call("ListSongs"), "songs")) >= 100
+        assert len(xml_find_all_local(await call("ListUsers"), "users")) >= 500
+        assert len(xml_find_all_local(await call("ListSongs"), "songs")) >= 1000
         assert len(xml_find_all_local(await call("ListUserPlaylists", "<tns:userId>1</tns:userId>"), "playlists")) >= 1
         assert len(xml_find_all_local(await call("ListPlaylistSongs", "<tns:playlistId>1</tns:playlistId>"), "songs")) >= 1
         assert len(xml_find_all_local(await call("ListPlaylistsBySong", "<tns:songId>1</tns:songId>"), "playlists")) >= 1
@@ -149,15 +155,15 @@ async def test_graphql(name: str, url: str):
             assert "errors" not in body, f"{name} GraphQL errors: {body['errors']}"
             return body["data"]
 
-        # 5 consultas obrigatórias + consulta aninhada
-        d = await gql("{ users { id name age } songs { id name artist } }")
-        assert len(d["users"]) >= 50 and len(d["songs"]) >= 100
+        # 5 consultas obrigatórias + consulta aninhada (todos os 6-7 atributos)
+        d = await gql("{ users { id name age email country planType createdAt } songs { id name artist album genre durationSec releaseYear } }")
+        assert len(d["users"]) >= 500 and len(d["songs"]) >= 1000
 
-        d2 = await gql("{ userPlaylists(userId: 1) { id name } playlistSongs(playlistId: 1) { id name } playlistsBySong(songId: 1) { id name } }")
+        d2 = await gql("{ userPlaylists(userId: 1) { id name description isPublic createdAt } playlistSongs(playlistId: 1) { id name album genre } playlistsBySong(songId: 1) { id name } }")
         assert len(d2["userPlaylists"]) >= 1 and len(d2["playlistSongs"]) >= 1 and len(d2["playlistsBySong"]) >= 1
 
         # Nested query (vantagem GraphQL)
-        nested = await gql("{ user(id: 1) { id name playlists { id name songs { id name artist } } } }")
+        nested = await gql("{ user(id: 1) { id name email country playlists { id name description songs { id name artist album durationSec } } } }")
         assert nested["user"]["id"] == 1 and len(nested["user"]["playlists"][0]["songs"]) >= 1
 
         # CRUD completo
@@ -180,8 +186,10 @@ async def test_grpc(name: str, target: str):
         stub = pb2_grpc.MusicStreamingServiceStub(channel)
 
         # 5 consultas obrigatórias
-        assert len((await stub.ListUsers(pb2.Empty())).users) >= 50
-        assert len((await stub.ListSongs(pb2.Empty())).songs) >= 100
+        u_list = (await stub.ListUsers(pb2.Empty())).users
+        s_list = (await stub.ListSongs(pb2.Empty())).songs
+        assert len(u_list) >= 500 and u_list[0].email and u_list[0].plan_type
+        assert len(s_list) >= 1000 and s_list[0].album and s_list[0].duration_sec > 0
         assert len((await stub.ListUserPlaylists(pb2.IdRequest(id=1))).playlists) >= 1
         assert len((await stub.ListPlaylistSongs(pb2.IdRequest(id=1))).songs) >= 1
         assert len((await stub.ListPlaylistsBySong(pb2.IdRequest(id=1))).playlists) >= 1

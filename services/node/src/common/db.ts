@@ -4,20 +4,38 @@ export interface User {
   id: number;
   name: string;
   age: number;
+  email: string;
+  country: string;
+  plan_type: string;
+  created_at: string;
 }
 
 export interface Song {
   id: number;
   name: string;
   artist: string;
+  album: string;
+  genre: string;
+  duration_sec: number;
+  release_year: number;
 }
 
 export interface Playlist {
   id: number;
   name: string;
   user_id: number;
+  description: string;
+  is_public: boolean;
+  created_at: string;
   songs: Song[];
 }
+
+const USER_COLS =
+  "id, name, age, email, country, plan_type, TO_CHAR(created_at, 'YYYY-MM-DD') AS created_at";
+const SONG_COLS =
+  "id, name, artist, album, genre, duration_sec, release_year";
+const PLAYLIST_COLS =
+  "id, name, user_id, description, is_public, TO_CHAR(created_at, 'YYYY-MM-DD') AS created_at";
 
 export class NotFoundError extends Error {
   constructor(message: string) {
@@ -33,6 +51,16 @@ export class ValidationError extends Error {
   }
 }
 
+function defaultEmail(name: string): string {
+  const slug =
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ".")
+      .replace(/^\.+|\.+$/g, "") || "user";
+  return `${slug}@musicstream.io`;
+}
+
 const connectionString =
   process.env.DATABASE_URL ||
   "postgresql://streaming:streaming@postgres:5432/music_streaming";
@@ -42,32 +70,44 @@ export const pool = new Pool({
   max: 20,
 });
 
-// -------------------- USERS --------------------
+// -------------------- USERS (7 atributos) --------------------
 
 export async function listUsers(): Promise<User[]> {
   const { rows } = await pool.query<User>(
-    "SELECT id, name, age FROM users ORDER BY id"
+    `SELECT ${USER_COLS} FROM users ORDER BY id`
   );
   return rows;
 }
 
 export async function getUser(userId: number): Promise<User> {
   const { rows } = await pool.query<User>(
-    "SELECT id, name, age FROM users WHERE id = $1",
+    `SELECT ${USER_COLS} FROM users WHERE id = $1`,
     [userId]
   );
   if (rows.length === 0) throw new NotFoundError(`User ${userId} not found`);
   return rows[0];
 }
 
-export async function createUser(name: string, age: number): Promise<User> {
+export async function createUser(
+  name: string,
+  age: number,
+  email?: string,
+  country?: string,
+  planType?: string
+): Promise<User> {
   if (typeof name !== "string" || !name.trim())
     throw new ValidationError("User name is required");
   if (!Number.isInteger(age) || age < 0)
     throw new ValidationError("User age must be a non-negative integer");
+  const cleanName = name.trim();
+  const cleanEmail = (email || "").trim() || defaultEmail(cleanName);
+  const cleanCountry = (country || "").trim() || "BR";
+  const cleanPlan = (planType || "").trim() || "free";
   const { rows } = await pool.query<User>(
-    "INSERT INTO users (name, age) VALUES ($1, $2) RETURNING id, name, age",
-    [name.trim(), age]
+    `INSERT INTO users (name, age, email, country, plan_type)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING ${USER_COLS}`,
+    [cleanName, age, cleanEmail, cleanCountry, cleanPlan]
   );
   return rows[0];
 }
@@ -75,15 +115,28 @@ export async function createUser(name: string, age: number): Promise<User> {
 export async function updateUser(
   userId: number,
   name: string,
-  age: number
+  age: number,
+  email?: string,
+  country?: string,
+  planType?: string
 ): Promise<User> {
   if (typeof name !== "string" || !name.trim())
     throw new ValidationError("User name is required");
   if (!Number.isInteger(age) || age < 0)
     throw new ValidationError("User age must be a non-negative integer");
+  const cleanEmail = (email || "").trim() || null;
+  const cleanCountry = (country || "").trim() || null;
+  const cleanPlan = (planType || "").trim() || null;
   const { rows } = await pool.query<User>(
-    "UPDATE users SET name = $1, age = $2 WHERE id = $3 RETURNING id, name, age",
-    [name.trim(), age, userId]
+    `UPDATE users
+     SET name = $1,
+         age = $2,
+         email = COALESCE($3, email),
+         country = COALESCE($4, country),
+         plan_type = COALESCE($5, plan_type)
+     WHERE id = $6
+     RETURNING ${USER_COLS}`,
+    [name.trim(), age, cleanEmail, cleanCountry, cleanPlan, userId]
   );
   if (rows.length === 0) throw new NotFoundError(`User ${userId} not found`);
   return rows[0];
@@ -94,31 +147,52 @@ export async function deleteUser(userId: number): Promise<boolean> {
   return (res.rowCount ?? 0) > 0;
 }
 
-// -------------------- SONGS --------------------
+// -------------------- SONGS (7 atributos) --------------------
 
 export async function listSongs(): Promise<Song[]> {
   const { rows } = await pool.query<Song>(
-    "SELECT id, name, artist FROM songs ORDER BY id"
+    `SELECT ${SONG_COLS} FROM songs ORDER BY id`
   );
   return rows;
 }
 
 export async function getSong(songId: number): Promise<Song> {
   const { rows } = await pool.query<Song>(
-    "SELECT id, name, artist FROM songs WHERE id = $1",
+    `SELECT ${SONG_COLS} FROM songs WHERE id = $1`,
     [songId]
   );
   if (rows.length === 0) throw new NotFoundError(`Song ${songId} not found`);
   return rows[0];
 }
 
-export async function createSong(name: string, artist: string): Promise<Song> {
-  if (!name || !name.trim()) throw new ValidationError("Song name is required");
-  if (!artist || !artist.trim())
+export async function createSong(
+  name: string,
+  artist: string,
+  album?: string,
+  genre?: string,
+  durationSec?: number,
+  releaseYear?: number
+): Promise<Song> {
+  if (typeof name !== "string" || !name.trim())
+    throw new ValidationError("Song name is required");
+  if (typeof artist !== "string" || !artist.trim())
     throw new ValidationError("Song artist is required");
+  if (durationSec !== undefined && (!Number.isInteger(durationSec) || durationSec <= 0))
+    throw new ValidationError("Song duration_sec must be a positive integer");
+  if (releaseYear !== undefined && (!Number.isInteger(releaseYear) || releaseYear < 1900))
+    throw new ValidationError("Song release_year must be >= 1900");
   const { rows } = await pool.query<Song>(
-    "INSERT INTO songs (name, artist) VALUES ($1, $2) RETURNING id, name, artist",
-    [name.trim(), artist.trim()]
+    `INSERT INTO songs (name, artist, album, genre, duration_sec, release_year)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING ${SONG_COLS}`,
+    [
+      name.trim(),
+      artist.trim(),
+      (album || "").trim() || "Single",
+      (genre || "").trim() || "Pop",
+      durationSec ?? 180,
+      releaseYear ?? 2024,
+    ]
   );
   return rows[0];
 }
@@ -126,14 +200,39 @@ export async function createSong(name: string, artist: string): Promise<Song> {
 export async function updateSong(
   songId: number,
   name: string,
-  artist: string
+  artist: string,
+  album?: string,
+  genre?: string,
+  durationSec?: number,
+  releaseYear?: number
 ): Promise<Song> {
-  if (!name || !name.trim()) throw new ValidationError("Song name is required");
-  if (!artist || !artist.trim())
+  if (typeof name !== "string" || !name.trim())
+    throw new ValidationError("Song name is required");
+  if (typeof artist !== "string" || !artist.trim())
     throw new ValidationError("Song artist is required");
+  if (durationSec !== undefined && (!Number.isInteger(durationSec) || durationSec <= 0))
+    throw new ValidationError("Song duration_sec must be a positive integer");
+  if (releaseYear !== undefined && (!Number.isInteger(releaseYear) || releaseYear < 1900))
+    throw new ValidationError("Song release_year must be >= 1900");
   const { rows } = await pool.query<Song>(
-    "UPDATE songs SET name = $1, artist = $2 WHERE id = $3 RETURNING id, name, artist",
-    [name.trim(), artist.trim(), songId]
+    `UPDATE songs
+     SET name = $1,
+         artist = $2,
+         album = COALESCE($3, album),
+         genre = COALESCE($4, genre),
+         duration_sec = COALESCE($5, duration_sec),
+         release_year = COALESCE($6, release_year)
+     WHERE id = $7
+     RETURNING ${SONG_COLS}`,
+    [
+      name.trim(),
+      artist.trim(),
+      (album || "").trim() || null,
+      (genre || "").trim() || null,
+      durationSec ?? null,
+      releaseYear ?? null,
+      songId,
+    ]
   );
   if (rows.length === 0) throw new NotFoundError(`Song ${songId} not found`);
   return rows[0];
@@ -171,7 +270,7 @@ export async function deleteSong(songId: number): Promise<boolean> {
   }
 }
 
-// -------------------- PLAYLISTS & RELATIONAL QUERIES --------------------
+// -------------------- PLAYLISTS (6 atributos) & RELATIONAL QUERIES --------------------
 
 export async function listPlaylistSongs(playlistId: number): Promise<Song[]> {
   const check = await pool.query("SELECT 1 FROM playlists WHERE id = $1", [
@@ -181,7 +280,7 @@ export async function listPlaylistSongs(playlistId: number): Promise<Song[]> {
     throw new NotFoundError(`Playlist ${playlistId} not found`);
 
   const { rows } = await pool.query<Song>(
-    `SELECT s.id, s.name, s.artist
+    `SELECT s.id, s.name, s.artist, s.album, s.genre, s.duration_sec, s.release_year
      FROM songs s
      INNER JOIN playlist_songs ps ON ps.song_id = s.id
      WHERE ps.playlist_id = $1
@@ -195,8 +294,8 @@ export async function getPlaylist(
   playlistId: number,
   includeSongs = true
 ): Promise<Playlist> {
-  const { rows } = await pool.query<{ id: number; name: string; user_id: number }>(
-    "SELECT id, name, user_id FROM playlists WHERE id = $1",
+  const { rows } = await pool.query<Omit<Playlist, "songs">>(
+    `SELECT ${PLAYLIST_COLS} FROM playlists WHERE id = $1`,
     [playlistId]
   );
   if (rows.length === 0)
@@ -214,21 +313,16 @@ export async function listUserPlaylists(
   ]);
   if (uCheck.rowCount === 0)
     throw new NotFoundError(`User ${userId} not found`);
-  const { rows } = await pool.query<{ id: number; name: string; user_id: number }>(
-    "SELECT id, name, user_id FROM playlists WHERE user_id = $1 ORDER BY id",
+  const { rows } = await pool.query<Omit<Playlist, "songs">>(
+    `SELECT ${PLAYLIST_COLS} FROM playlists WHERE user_id = $1 ORDER BY id`,
     [userId]
   );
   const playlists: Playlist[] = rows.map((r) => ({ ...r, songs: [] }));
 
   if (includeSongs && playlists.length > 0) {
     const ids = playlists.map((p) => p.id);
-    const { rows: songRows } = await pool.query<{
-      playlist_id: number;
-      id: number;
-      name: string;
-      artist: string;
-    }>(
-      `SELECT ps.playlist_id, s.id, s.name, s.artist
+    const { rows: songRows } = await pool.query<Song & { playlist_id: number }>(
+      `SELECT ps.playlist_id, s.id, s.name, s.artist, s.album, s.genre, s.duration_sec, s.release_year
        FROM playlist_songs ps
        INNER JOIN songs s ON s.id = ps.song_id
        WHERE ps.playlist_id = ANY($1::int[])
@@ -242,6 +336,10 @@ export async function listUserPlaylists(
         id: sr.id,
         name: sr.name,
         artist: sr.artist,
+        album: sr.album,
+        genre: sr.genre,
+        duration_sec: sr.duration_sec,
+        release_year: sr.release_year,
       });
     }
     for (const pl of playlists) {
@@ -257,8 +355,9 @@ export async function listPlaylistsBySong(songId: number): Promise<Playlist[]> {
   ]);
   if (sCheck.rowCount === 0)
     throw new NotFoundError(`Song ${songId} not found`);
-  const { rows } = await pool.query<{ id: number; name: string; user_id: number }>(
-    `SELECT p.id, p.name, p.user_id
+  const { rows } = await pool.query<Omit<Playlist, "songs">>(
+    `SELECT p.id, p.name, p.user_id, p.description, p.is_public,
+            TO_CHAR(p.created_at, 'YYYY-MM-DD') AS created_at
      FROM playlists p
      INNER JOIN playlist_songs ps ON ps.playlist_id = p.id
      WHERE ps.song_id = $1
@@ -271,7 +370,9 @@ export async function listPlaylistsBySong(songId: number): Promise<Playlist[]> {
 export async function createPlaylist(
   userId: number,
   name: string,
-  songIds: number[]
+  songIds: number[],
+  description?: string,
+  isPublic?: boolean
 ): Promise<Playlist> {
   if (typeof name !== "string" || !name.trim())
     throw new ValidationError("Playlist name is required");
@@ -298,8 +399,8 @@ export async function createPlaylist(
       throw new NotFoundError(`Song(s) not found: [${missing.join(", ")}]`);
 
     const { rows } = await client.query<{ id: number }>(
-      "INSERT INTO playlists (name, user_id) VALUES ($1, $2) RETURNING id",
-      [name.trim(), userId]
+      "INSERT INTO playlists (name, user_id, description, is_public) VALUES ($1, $2, $3, $4) RETURNING id",
+      [name.trim(), userId, (description || "").trim(), isPublic ?? true]
     );
     const playlistId = rows[0].id;
     for (const sid of uniqueSongs) {
@@ -321,7 +422,9 @@ export async function createPlaylist(
 export async function updatePlaylist(
   playlistId: number,
   name: string,
-  songIds?: number[]
+  songIds?: number[],
+  description?: string,
+  isPublic?: boolean
 ): Promise<Playlist> {
   if (typeof name !== "string" || !name.trim())
     throw new ValidationError("Playlist name is required");
@@ -330,8 +433,17 @@ export async function updatePlaylist(
   try {
     await client.query("BEGIN");
     const { rowCount } = await client.query(
-      "UPDATE playlists SET name = $1 WHERE id = $2",
-      [name.trim(), playlistId]
+      `UPDATE playlists
+       SET name = $1,
+           description = COALESCE($2, description),
+           is_public = COALESCE($3, is_public)
+       WHERE id = $4`,
+      [
+        name.trim(),
+        description !== undefined ? description.trim() : null,
+        isPublic !== undefined ? isPublic : null,
+        playlistId,
+      ]
     );
     if (rowCount === 0)
       throw new NotFoundError(`Playlist ${playlistId} not found`);

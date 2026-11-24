@@ -8,12 +8,16 @@
 
   <types>
     <xsd:schema targetNamespace="http://streaming.example.com/soap" elementFormDefault="qualified">
-      <!-- Modelos de Domínio -->
+      <!-- Modelos de Domínio (≥ 6 atributos por entidade) -->
       <xsd:complexType name="User">
         <xsd:sequence>
           <xsd:element name="id" type="xsd:int"/>
           <xsd:element name="name" type="xsd:string"/>
           <xsd:element name="age" type="xsd:int"/>
+          <xsd:element name="email" type="xsd:string"/>
+          <xsd:element name="country" type="xsd:string"/>
+          <xsd:element name="planType" type="xsd:string"/>
+          <xsd:element name="createdAt" type="xsd:string"/>
         </xsd:sequence>
       </xsd:complexType>
 
@@ -22,6 +26,10 @@
           <xsd:element name="id" type="xsd:int"/>
           <xsd:element name="name" type="xsd:string"/>
           <xsd:element name="artist" type="xsd:string"/>
+          <xsd:element name="album" type="xsd:string"/>
+          <xsd:element name="genre" type="xsd:string"/>
+          <xsd:element name="durationSec" type="xsd:int"/>
+          <xsd:element name="releaseYear" type="xsd:int"/>
         </xsd:sequence>
       </xsd:complexType>
 
@@ -30,6 +38,9 @@
           <xsd:element name="id" type="xsd:int"/>
           <xsd:element name="name" type="xsd:string"/>
           <xsd:element name="userId" type="xsd:int"/>
+          <xsd:element name="description" type="xsd:string"/>
+          <xsd:element name="isPublic" type="xsd:boolean"/>
+          <xsd:element name="createdAt" type="xsd:string"/>
           <xsd:element name="songs" type="tns:Song" minOccurs="0" maxOccurs="unbounded"/>
         </xsd:sequence>
       </xsd:complexType>
@@ -56,6 +67,9 @@
           <xsd:sequence>
             <xsd:element name="name" type="xsd:string"/>
             <xsd:element name="age" type="xsd:int"/>
+            <xsd:element name="email" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="country" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="planType" type="xsd:string" minOccurs="0"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
@@ -69,6 +83,9 @@
             <xsd:element name="id" type="xsd:int"/>
             <xsd:element name="name" type="xsd:string"/>
             <xsd:element name="age" type="xsd:int"/>
+            <xsd:element name="email" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="country" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="planType" type="xsd:string" minOccurs="0"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
@@ -105,6 +122,10 @@
           <xsd:sequence>
             <xsd:element name="name" type="xsd:string"/>
             <xsd:element name="artist" type="xsd:string"/>
+            <xsd:element name="album" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="genre" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="durationSec" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="releaseYear" type="xsd:int" minOccurs="0"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
@@ -118,6 +139,10 @@
             <xsd:element name="id" type="xsd:int"/>
             <xsd:element name="name" type="xsd:string"/>
             <xsd:element name="artist" type="xsd:string"/>
+            <xsd:element name="album" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="genre" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="durationSec" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="releaseYear" type="xsd:int" minOccurs="0"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
@@ -146,6 +171,8 @@
             <xsd:element name="name" type="xsd:string"/>
             <xsd:element name="userId" type="xsd:int"/>
             <xsd:element name="songIds" type="xsd:int" minOccurs="1" maxOccurs="unbounded"/>
+            <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="isPublic" type="xsd:boolean" minOccurs="0"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
@@ -159,6 +186,8 @@
             <xsd:element name="id" type="xsd:int"/>
             <xsd:element name="name" type="xsd:string"/>
             <xsd:element name="songIds" type="xsd:int" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="isPublic" type="xsd:boolean" minOccurs="0"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>

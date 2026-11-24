@@ -2,6 +2,10 @@ type User {
   id: Int!
   name: String!
   age: Int!
+  email: String!
+  country: String!
+  planType: String!
+  createdAt: String!
   playlists: [Playlist!]!
 }
 
@@ -9,6 +13,10 @@ type Song {
   id: Int!
   name: String!
   artist: String!
+  album: String!
+  genre: String!
+  durationSec: Int!
+  releaseYear: Int!
   playlists: [Playlist!]!
 }
 
@@ -16,6 +24,9 @@ type Playlist {
   id: Int!
   name: String!
   userId: Int!
+  description: String!
+  isPublic: Boolean!
+  createdAt: String!
   user: User!
   songs: [Song!]!
 }
@@ -42,16 +53,16 @@ type Query {
 }
 
 type Mutation {
-  createUser(name: String!, age: Int!): User!
-  updateUser(id: Int!, name: String!, age: Int!): User!
+  createUser(name: String!, age: Int!, email: String, country: String, planType: String): User!
+  updateUser(id: Int!, name: String!, age: Int!, email: String, country: String, planType: String): User!
   deleteUser(id: Int!): Boolean!
 
-  createSong(name: String!, artist: String!): Song!
-  updateSong(id: Int!, name: String!, artist: String!): Song!
+  createSong(name: String!, artist: String!, album: String, genre: String, durationSec: Int, releaseYear: Int): Song!
+  updateSong(id: Int!, name: String!, artist: String!, album: String, genre: String, durationSec: Int, releaseYear: Int): Song!
   deleteSong(id: Int!): Boolean!
 
-  createPlaylist(userId: Int!, name: String!, songIds: [Int!]!): Playlist!
-  updatePlaylist(id: Int!, name: String!, songIds: [Int!]): Playlist!
+  createPlaylist(userId: Int!, name: String!, songIds: [Int!]!, description: String, isPublic: Boolean): Playlist!
+  updatePlaylist(id: Int!, name: String!, songIds: [Int!], description: String, isPublic: Boolean): Playlist!
   deletePlaylist(id: Int!): Boolean!
   addSongToPlaylist(playlistId: Int!, songId: Int!): Playlist!
   removeSongFromPlaylist(playlistId: Int!, songId: Int!): Playlist!

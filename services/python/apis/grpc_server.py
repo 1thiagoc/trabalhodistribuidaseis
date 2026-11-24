@@ -8,11 +8,27 @@ import music_streaming_pb2_grpc as pb2_grpc
 
 
 def _to_user(u: dict) -> pb2.User:
-    return pb2.User(id=u["id"], name=u["name"], age=u["age"])
+    return pb2.User(
+        id=u["id"],
+        name=u["name"],
+        age=u["age"],
+        email=u["email"],
+        country=u["country"],
+        plan_type=u["plan_type"],
+        created_at=u["created_at"],
+    )
 
 
 def _to_song(s: dict) -> pb2.Song:
-    return pb2.Song(id=s["id"], name=s["name"], artist=s["artist"])
+    return pb2.Song(
+        id=s["id"],
+        name=s["name"],
+        artist=s["artist"],
+        album=s["album"],
+        genre=s["genre"],
+        duration_sec=s["duration_sec"],
+        release_year=s["release_year"],
+    )
 
 
 def _to_playlist(p: dict) -> pb2.Playlist:
@@ -20,6 +36,9 @@ def _to_playlist(p: dict) -> pb2.Playlist:
         id=p["id"],
         name=p["name"],
         user_id=p["user_id"],
+        description=p["description"],
+        is_public=p["is_public"],
+        created_at=p["created_at"],
         songs=[_to_song(s) for s in p.get("songs", [])],
     )
 
@@ -44,13 +63,30 @@ class MusicStreamingServicer(pb2_grpc.MusicStreamingServiceServicer):
 
     async def CreateUser(self, request, context):
         try:
-            return _to_user(await db.create_user(request.name, request.age))
+            return _to_user(
+                await db.create_user(
+                    request.name,
+                    request.age,
+                    request.email or None,
+                    request.country or None,
+                    request.plan_type or None,
+                )
+            )
         except Exception as exc:
             await self._abort(context, exc)
 
     async def UpdateUser(self, request, context):
         try:
-            return _to_user(await db.update_user(request.id, request.name, request.age))
+            return _to_user(
+                await db.update_user(
+                    request.id,
+                    request.name,
+                    request.age,
+                    request.email or None,
+                    request.country or None,
+                    request.plan_type or None,
+                )
+            )
         except Exception as exc:
             await self._abort(context, exc)
 
@@ -70,13 +106,32 @@ class MusicStreamingServicer(pb2_grpc.MusicStreamingServiceServicer):
 
     async def CreateSong(self, request, context):
         try:
-            return _to_song(await db.create_song(request.name, request.artist))
+            return _to_song(
+                await db.create_song(
+                    request.name,
+                    request.artist,
+                    request.album or None,
+                    request.genre or None,
+                    request.duration_sec or None,
+                    request.release_year or None,
+                )
+            )
         except Exception as exc:
             await self._abort(context, exc)
 
     async def UpdateSong(self, request, context):
         try:
-            return _to_song(await db.update_song(request.id, request.name, request.artist))
+            return _to_song(
+                await db.update_song(
+                    request.id,
+                    request.name,
+                    request.artist,
+                    request.album or None,
+                    request.genre or None,
+                    request.duration_sec or None,
+                    request.release_year or None,
+                )
+            )
         except Exception as exc:
             await self._abort(context, exc)
 
@@ -95,7 +150,13 @@ class MusicStreamingServicer(pb2_grpc.MusicStreamingServiceServicer):
 
     async def CreatePlaylist(self, request, context):
         try:
-            pl = await db.create_playlist(request.user_id, request.name, list(request.song_ids))
+            pl = await db.create_playlist(
+                request.user_id,
+                request.name,
+                list(request.song_ids),
+                request.description or "",
+                request.is_public,
+            )
             return _to_playlist(pl)
         except Exception as exc:
             await self._abort(context, exc)
@@ -103,7 +164,13 @@ class MusicStreamingServicer(pb2_grpc.MusicStreamingServiceServicer):
     async def UpdatePlaylist(self, request, context):
         try:
             song_ids = list(request.song_ids) if len(request.song_ids) > 0 else None
-            pl = await db.update_playlist(request.id, request.name, song_ids)
+            pl = await db.update_playlist(
+                request.id,
+                request.name,
+                song_ids,
+                request.description or None,
+                request.is_public,
+            )
             return _to_playlist(pl)
         except Exception as exc:
             await self._abort(context, exc)

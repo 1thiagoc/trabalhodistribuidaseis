@@ -1,50 +1,34 @@
 service_id,language,protocol,concurrency,duration_s,total_requests,errors,error_rate_pct,rps,p50_ms,p95_ms,p99_ms,breached,breach_reason
-python-rest,Python,REST,10,4.01,2230,0,0.0,556.21,7.68,71.37,176.03,False,OK
-python-rest,Python,REST,25,4.03,2170,0,0.0,538.8,31.13,135.28,211.89,False,OK
-python-rest,Python,REST,50,4.23,1385,0,0.0,327.6,102.69,428.74,635.6,False,OK
-python-rest,Python,REST,100,4.31,1268,0,0.0,294.5,228.62,998.22,1452.26,False,OK
-python-rest,Python,REST,200,6.41,867,42,4.84,128.73,506.31,4209.29,4919.22,True,p95=4209ms>=3000ms
-python-soap,Python,SOAP,10,4.01,2926,0,0.0,729.29,10.84,22.61,77.5,False,OK
-python-soap,Python,SOAP,25,4.04,2464,0,0.0,610.04,24.86,124.13,187.94,False,OK
-python-soap,Python,SOAP,50,4.13,857,0,0.0,207.34,140.52,771.36,1329.01,False,OK
-python-soap,Python,SOAP,100,4.49,507,0,0.0,112.8,638.07,2186.24,3107.99,False,OK
-python-soap,Python,SOAP,200,7.91,726,45,6.2,86.09,849.9,4022.86,4728.6,True,err=6.2%>=5% | p95=4023ms>=3000ms
-python-graphql,Python,GraphQL,10,4.02,765,0,0.0,190.4,41.98,84.11,381.81,False,OK
-python-graphql,Python,GraphQL,25,4.19,765,0,0.0,182.39,98.38,273.5,748.12,False,OK
-python-graphql,Python,GraphQL,50,4.19,501,0,0.0,119.47,289.75,1140.12,1819.93,False,OK
-python-graphql,Python,GraphQL,100,4.34,815,0,0.0,187.59,349.94,1425.63,2420.41,False,OK
-python-graphql,Python,GraphQL,200,5.81,561,41,7.31,89.51,1300.1,4214.57,4785.78,True,err=7.3%>=5% | p95=4215ms>=3000ms
-python-grpc,Python,gRPC,10,4.0,5819,0,0.0,1453.33,5.39,16.98,21.83,False,OK
-python-grpc,Python,gRPC,25,4.01,6247,0,0.0,1556.19,13.27,26.65,32.67,False,OK
-python-grpc,Python,gRPC,50,4.04,5804,0,0.0,1434.99,32.54,52.97,74.63,False,OK
-python-grpc,Python,gRPC,100,4.05,5027,0,0.0,1241.54,68.71,186.3,300.82,False,OK
-python-grpc,Python,gRPC,200,4.46,5345,0,0.0,1199.19,136.1,354.22,739.88,False,OK
-python-grpc,Python,gRPC,350,4.34,4641,0,0.0,1070.1,216.37,1131.25,1324.43,False,OK
-python-grpc,Python,gRPC,500,6.44,2082,0,0.0,323.41,1124.83,2510.76,2591.45,False,OK
-python-grpc,Python,gRPC,750,8.5,1594,0,0.0,187.47,2809.85,4758.23,4765.06,True,p95=4758ms>=3000ms
-node-rest,Node.js (TS),REST,10,4.02,2882,0,0.0,717.36,7.39,43.46,77.69,False,OK
-node-rest,Node.js (TS),REST,25,4.08,1488,0,0.0,364.99,42.29,216.96,338.96,False,OK
-node-rest,Node.js (TS),REST,50,4.07,1267,0,0.0,311.63,86.35,625.84,1153.61,False,OK
-node-rest,Node.js (TS),REST,100,4.32,2025,0,0.0,469.27,147.89,566.16,830.43,False,OK
-node-rest,Node.js (TS),REST,200,4.9,1303,0,0.0,266.14,483.14,1991.86,3060.15,False,OK
-node-rest,Node.js (TS),REST,350,7.69,1379,64,4.64,170.99,847.03,4136.21,4704.94,True,p95=4136ms>=3000ms
-node-soap,Node.js (TS),SOAP,10,4.02,1821,0,0.0,453.47,14.17,59.96,129.78,False,OK
-node-soap,Node.js (TS),SOAP,25,4.03,2415,0,0.0,599.46,25.64,127.67,190.28,False,OK
-node-soap,Node.js (TS),SOAP,50,4.08,1796,0,0.0,440.58,75.15,321.91,572.34,False,OK
-node-soap,Node.js (TS),SOAP,100,5.11,1491,0,0.0,291.83,178.81,1080.67,1721.42,False,OK
-node-soap,Node.js (TS),SOAP,200,5.13,595,1,0.17,115.88,1228.19,4194.68,4811.52,True,p95=4195ms>=3000ms
-node-graphql,Node.js (TS),GraphQL,10,4.01,1396,0,0.0,347.77,19.59,77.18,145.53,False,OK
-node-graphql,Node.js (TS),GraphQL,25,4.1,1911,0,0.0,465.79,43.25,100.25,186.09,False,OK
-node-graphql,Node.js (TS),GraphQL,50,4.1,1271,0,0.0,309.63,105.33,461.09,811.61,False,OK
-node-graphql,Node.js (TS),GraphQL,100,4.19,1612,0,0.0,384.77,182.31,711.9,1119.94,False,OK
-node-graphql,Node.js (TS),GraphQL,200,4.74,1151,0,0.0,243.01,483.08,2379.45,3440.82,False,OK
-node-graphql,Node.js (TS),GraphQL,350,6.04,1081,36,3.33,173.11,1185.07,4031.58,4768.59,True,p95=4032ms>=3000ms
-node-grpc,Node.js (TS),gRPC,10,4.0,5488,0,0.0,1371.46,5.86,12.3,59.33,False,OK
-node-grpc,Node.js (TS),gRPC,25,4.01,9094,0,0.0,2270.41,9.37,20.11,39.71,False,OK
-node-grpc,Node.js (TS),gRPC,50,4.01,8561,0,0.0,2136.39,19.13,47.13,55.31,False,OK
-node-grpc,Node.js (TS),gRPC,100,4.04,6160,0,0.0,1525.53,59.07,121.34,136.89,False,OK
-node-grpc,Node.js (TS),gRPC,200,4.05,8040,0,0.0,1984.88,96.33,137.87,159.42,False,OK
-node-grpc,Node.js (TS),gRPC,350,4.23,8010,0,0.0,1895.19,180.55,228.07,253.85,False,OK
-node-grpc,Node.js (TS),gRPC,500,4.19,6920,0,0.0,1650.19,259.47,519.69,576.93,False,OK
-node-grpc,Node.js (TS),gRPC,750,4.28,8290,0,0.0,1935.13,377.71,499.39,509.48,False,OK
-node-grpc,Node.js (TS),gRPC,1000,4.59,7159,0,0.0,1558.44,549.12,949.03,975.27,False,OK
+python-rest,Python,REST,10,3.14,192,0,0.0,61.18,149.64,204.88,399.78,False,OK
+python-rest,Python,REST,25,3.39,191,0,0.0,56.36,385.34,813.72,987.08,False,OK
+python-rest,Python,REST,50,3.74,199,0,0.0,53.28,688.97,2384.6,2952.02,False,OK
+python-rest,Python,REST,100,4.54,280,0,0.0,61.64,1087.22,3443.83,4142.98,True,p95=3444ms>=3000ms
+python-soap,Python,SOAP,10,3.58,142,0,0.0,39.62,175.51,787.02,838.3,False,OK
+python-soap,Python,SOAP,25,3.35,168,0,0.0,50.12,390.68,1154.06,1301.84,False,OK
+python-soap,Python,SOAP,50,3.73,214,0,0.0,57.41,758.18,1785.34,2423.52,False,OK
+python-soap,Python,SOAP,100,5.09,272,4,1.47,52.66,1172.75,3640.94,4753.0,True,p95=3641ms>=3000ms
+python-graphql,Python,GraphQL,10,3.2,69,0,0.0,21.59,360.13,828.31,859.63,False,OK
+python-graphql,Python,GraphQL,25,3.67,108,0,0.0,29.39,794.52,1113.12,1514.63,False,OK
+python-graphql,Python,GraphQL,50,4.43,119,0,0.0,26.88,1575.89,2966.23,3618.53,False,OK
+python-graphql,Python,GraphQL,100,5.43,175,24,13.71,27.81,1900.1,4796.63,4961.94,True,err=13.7%>=5% | p95=4797ms>=3000ms
+python-grpc,Python,gRPC,10,3.06,430,0,0.0,140.57,67.43,108.33,247.84,False,OK
+python-grpc,Python,gRPC,25,3.1,703,0,0.0,226.79,107.96,128.24,132.02,False,OK
+python-grpc,Python,gRPC,50,3.21,725,0,0.0,226.01,216.28,238.88,253.49,False,OK
+python-grpc,Python,gRPC,100,3.86,744,0,0.0,192.58,446.59,788.18,872.41,False,OK
+python-grpc,Python,gRPC,200,3.84,871,0,0.0,226.62,859.11,915.45,940.79,False,OK
+python-grpc,Python,gRPC,350,4.48,1031,0,0.0,230.17,1485.52,1520.25,1549.56,False,OK
+python-grpc,Python,gRPC,500,5.33,1011,0,0.0,189.57,2496.99,3045.36,3052.59,True,p95=3045ms>=3000ms
+node-rest,Node.js (TS),REST,10,3.03,639,0,0.0,210.9,42.13,75.77,88.29,False,OK
+node-rest,Node.js (TS),REST,25,3.11,665,0,0.0,214.05,102.89,183.23,642.31,False,OK
+node-rest,Node.js (TS),REST,50,3.29,577,0,0.0,175.17,215.61,464.07,1958.49,False,OK
+node-rest,Node.js (TS),REST,100,4.26,430,0,0.0,100.89,544.5,2157.92,2879.85,False,OK
+node-rest,Node.js (TS),REST,200,7.38,400,90,22.5,42.01,1312.56,4764.88,5020.37,True,err=22.5%>=5% | p95=4765ms>=3000ms
+node-soap,Node.js (TS),SOAP,10,3.2,79,0,0.0,24.71,339.98,782.42,1411.87,False,OK
+node-soap,Node.js (TS),SOAP,25,3.52,172,0,0.0,48.88,328.76,1584.64,3416.31,False,OK
+node-soap,Node.js (TS),SOAP,50,4.04,169,0,0.0,41.85,638.44,3856.14,3993.42,True,p95=3856ms>=3000ms
+node-graphql,Node.js (TS),GraphQL,10,3.28,104,0,0.0,31.73,293.47,480.45,800.33,False,OK
+node-graphql,Node.js (TS),GraphQL,25,4.04,113,0,0.0,27.95,527.09,3282.96,3936.92,True,p95=3283ms>=3000ms
+node-grpc,Node.js (TS),gRPC,10,3.08,234,0,0.0,75.91,111.02,257.84,300.3,False,OK
+node-grpc,Node.js (TS),gRPC,25,3.09,271,0,0.0,87.73,288.74,372.03,715.15,False,OK
+node-grpc,Node.js (TS),gRPC,50,3.71,252,0,0.0,68.01,685.21,1007.27,1189.04,False,OK
+node-grpc,Node.js (TS),gRPC,100,4.92,120,0,0.0,24.41,4083.33,4895.81,4899.49,True,p95=4896ms>=3000ms

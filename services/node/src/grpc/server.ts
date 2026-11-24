@@ -40,7 +40,16 @@ const handlers = {
   },
   async CreateUser(call: any, cb: any) {
     try {
-      cb(null, await db.createUser(call.request.name, call.request.age));
+      cb(
+        null,
+        await db.createUser(
+          call.request.name,
+          call.request.age,
+          call.request.email || undefined,
+          call.request.country || undefined,
+          call.request.plan_type || undefined
+        )
+      );
     } catch (err) {
       cb(toGrpcError(err));
     }
@@ -49,7 +58,14 @@ const handlers = {
     try {
       cb(
         null,
-        await db.updateUser(call.request.id, call.request.name, call.request.age)
+        await db.updateUser(
+          call.request.id,
+          call.request.name,
+          call.request.age,
+          call.request.email || undefined,
+          call.request.country || undefined,
+          call.request.plan_type || undefined
+        )
       );
     } catch (err) {
       cb(toGrpcError(err));
@@ -81,7 +97,17 @@ const handlers = {
   },
   async CreateSong(call: any, cb: any) {
     try {
-      cb(null, await db.createSong(call.request.name, call.request.artist));
+      cb(
+        null,
+        await db.createSong(
+          call.request.name,
+          call.request.artist,
+          call.request.album || undefined,
+          call.request.genre || undefined,
+          call.request.duration_sec || undefined,
+          call.request.release_year || undefined
+        )
+      );
     } catch (err) {
       cb(toGrpcError(err));
     }
@@ -93,7 +119,11 @@ const handlers = {
         await db.updateSong(
           call.request.id,
           call.request.name,
-          call.request.artist
+          call.request.artist,
+          call.request.album || undefined,
+          call.request.genre || undefined,
+          call.request.duration_sec || undefined,
+          call.request.release_year || undefined
         )
       );
     } catch (err) {
@@ -123,7 +153,9 @@ const handlers = {
         await db.createPlaylist(
           call.request.user_id,
           call.request.name,
-          call.request.song_ids || []
+          call.request.song_ids || [],
+          call.request.description || "",
+          call.request.is_public
         )
       );
     } catch (err) {
@@ -136,7 +168,16 @@ const handlers = {
         call.request.song_ids && call.request.song_ids.length > 0
           ? call.request.song_ids
           : undefined;
-      cb(null, await db.updatePlaylist(call.request.id, call.request.name, sids));
+      cb(
+        null,
+        await db.updatePlaylist(
+          call.request.id,
+          call.request.name,
+          sids,
+          call.request.description || undefined,
+          call.request.is_public
+        )
+      );
     } catch (err) {
       cb(toGrpcError(err));
     }

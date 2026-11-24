@@ -104,7 +104,7 @@ def make_rest_ops(client: httpx.AsyncClient) -> Dict[str, Callable[[int], Awaita
         return len(r.content)
 
     async def w2_relational(i: int) -> int:
-        uid = (i % 50) + 1
+        uid = (i % 500) + 1
         r1 = await client.get(f"/users/{uid}")
         r1.raise_for_status()
         r2 = await client.get(f"/users/{uid}/playlists")
@@ -120,15 +120,15 @@ def make_rest_ops(client: httpx.AsyncClient) -> Dict[str, Callable[[int], Awaita
     async def w3_mixed(i: int) -> int:
         bucket = i % 10
         if bucket < 3:
-            r = await client.get(f"/users/{(i % 50) + 1}/playlists")
+            r = await client.get(f"/users/{(i % 500) + 1}/playlists")
             r.raise_for_status()
             return len(r.content)
         if bucket < 5:
-            r = await client.get(f"/playlists/{(i % 120) + 1}/songs")
+            r = await client.get(f"/playlists/{(i % 1000) + 1}/songs")
             r.raise_for_status()
             return len(r.content)
         if bucket < 7:
-            r = await client.get(f"/songs/{(i % 100) + 1}/playlists")
+            r = await client.get(f"/songs/{(i % 1000) + 1}/playlists")
             r.raise_for_status()
             return len(r.content)
         # 30% escrita (Create -> Update -> Delete para manter base estável)
@@ -163,7 +163,7 @@ def make_soap_ops(client: httpx.AsyncClient, url: str) -> Dict[str, Callable[[in
         return len(content)
 
     async def w2_relational(i: int) -> int:
-        uid = (i % 50) + 1
+        uid = (i % 500) + 1
         c1 = await post_soap("GetUser", f"<tns:id>{uid}</tns:id>")
         c2 = await post_soap("ListUserPlaylists", f"<tns:userId>{uid}</tns:userId>")
         pl_ids = all_local_texts(c2, "playlists", "id")
@@ -176,11 +176,11 @@ def make_soap_ops(client: httpx.AsyncClient, url: str) -> Dict[str, Callable[[in
     async def w3_mixed(i: int) -> int:
         bucket = i % 10
         if bucket < 3:
-            return len(await post_soap("ListUserPlaylists", f"<tns:userId>{(i % 50) + 1}</tns:userId>"))
+            return len(await post_soap("ListUserPlaylists", f"<tns:userId>{(i % 500) + 1}</tns:userId>"))
         if bucket < 5:
-            return len(await post_soap("ListPlaylistSongs", f"<tns:playlistId>{(i % 120) + 1}</tns:playlistId>"))
+            return len(await post_soap("ListPlaylistSongs", f"<tns:playlistId>{(i % 1000) + 1}</tns:playlistId>"))
         if bucket < 7:
-            return len(await post_soap("ListPlaylistsBySong", f"<tns:songId>{(i % 100) + 1}</tns:songId>"))
+            return len(await post_soap("ListPlaylistsBySong", f"<tns:songId>{(i % 1000) + 1}</tns:songId>"))
         c1 = await post_soap("CreateUser", f"<tns:name>Bench SOAP {i}</tns:name><tns:age>24</tns:age>")
         uid = first_local_text(c1, "id")
         c2 = await post_soap("UpdateUser", f"<tns:id>{uid}</tns:id><tns:name>Bench SOAP Upd {i}</tns:name><tns:age>25</tns:age>")
@@ -204,31 +204,33 @@ def make_graphql_ops(client: httpx.AsyncClient, url: str) -> Dict[str, Callable[
         return body["data"], len(r.content)
 
     async def w1_list_songs(_iter: int) -> int:
-        _, n = await post_gql("{ songs { id name artist } }")
+        _, n = await post_gql("{ songs { id name artist album genre durationSec releaseYear } }")
         return n
 
     async def w2_relational(i: int) -> int:
-        # GraphQL resolve o perfil + playlists + músicas em UMA ÚNICA requisição!
-        uid = (i % 50) + 1
+        # GraphQL resolve o perfil + playlists + músicas (todos os 6-7 atributos) em UMA ÚNICA requisição!
+        uid = (i % 500) + 1
         _, n = await post_gql(
-            f"{{ user(id: {uid}) {{ id name age playlists {{ id name songs {{ id name artist }} }} }} }}"
+            f"{{ user(id: {uid}) {{ id name age email country planType createdAt "
+            f"playlists {{ id name description isPublic createdAt "
+            f"songs {{ id name artist album genre durationSec releaseYear }} }} }} }}"
         )
         return n
 
     async def w3_mixed(i: int) -> int:
         bucket = i % 10
         if bucket < 3:
-            _, n = await post_gql(f"{{ userPlaylists(userId: {(i % 50) + 1}) {{ id name userId }} }}")
+            _, n = await post_gql(f"{{ userPlaylists(userId: {(i % 500) + 1}) {{ id name userId description isPublic createdAt }} }}")
             return n
         if bucket < 5:
-            _, n = await post_gql(f"{{ playlistSongs(playlistId: {(i % 120) + 1}) {{ id name artist }} }}")
+            _, n = await post_gql(f"{{ playlistSongs(playlistId: {(i % 1000) + 1}) {{ id name artist album genre durationSec releaseYear }} }}")
             return n
         if bucket < 7:
-            _, n = await post_gql(f"{{ playlistsBySong(songId: {(i % 100) + 1}) {{ id name userId }} }}")
+            _, n = await post_gql(f"{{ playlistsBySong(songId: {(i % 1000) + 1}) {{ id name userId description isPublic createdAt }} }}")
             return n
-        d1, n1 = await post_gql(f'mutation {{ createUser(name: "Bench GQL {i}", age: 24) {{ id name age }} }}')
+        d1, n1 = await post_gql(f'mutation {{ createUser(name: "Bench GQL {i}", age: 24) {{ id name age email country planType createdAt }} }}')
         uid = d1["createUser"]["id"]
-        _, n2 = await post_gql(f'mutation {{ updateUser(id: {uid}, name: "Bench GQL Upd {i}", age: 25) {{ id name age }} }}')
+        _, n2 = await post_gql(f'mutation {{ updateUser(id: {uid}, name: "Bench GQL Upd {i}", age: 25) {{ id name age email country planType createdAt }} }}')
         _, n3 = await post_gql(f"mutation {{ deleteUser(id: {uid}) }}")
         return n1 + n2 + n3
 
@@ -239,13 +241,14 @@ def make_graphql_ops(client: httpx.AsyncClient, url: str) -> Dict[str, Callable[
     }
 
 
-def make_grpc_ops(stub: pb2_grpc.MusicStreamingServiceStub) -> Dict[str, Callable[[int], Awaitable[int]]]:
-    async def w1_list_songs(_iter: int) -> int:
-        resp = await stub.ListSongs(pb2.Empty())
+def make_grpc_ops(stubs: List[pb2_grpc.MusicStreamingServiceStub]) -> Dict[str, Callable[[int], Awaitable[int]]]:
+    async def w1_list_songs(i: int) -> int:
+        resp = await stubs[i % len(stubs)].ListSongs(pb2.Empty())
         return resp.ByteSize()
 
     async def w2_relational(i: int) -> int:
-        uid = (i % 50) + 1
+        stub = stubs[i % len(stubs)]
+        uid = (i % 500) + 1
         u = await stub.GetUser(pb2.IdRequest(id=uid))
         pls = await stub.ListUserPlaylists(pb2.IdRequest(id=uid))
         total = u.ByteSize() + pls.ByteSize()
@@ -255,15 +258,16 @@ def make_grpc_ops(stub: pb2_grpc.MusicStreamingServiceStub) -> Dict[str, Callabl
         return total
 
     async def w3_mixed(i: int) -> int:
+        stub = stubs[i % len(stubs)]
         bucket = i % 10
         if bucket < 3:
-            r = await stub.ListUserPlaylists(pb2.IdRequest(id=(i % 50) + 1))
+            r = await stub.ListUserPlaylists(pb2.IdRequest(id=(i % 500) + 1))
             return r.ByteSize()
         if bucket < 5:
-            r = await stub.ListPlaylistSongs(pb2.IdRequest(id=(i % 120) + 1))
+            r = await stub.ListPlaylistSongs(pb2.IdRequest(id=(i % 1000) + 1))
             return r.ByteSize()
         if bucket < 7:
-            r = await stub.ListPlaylistsBySong(pb2.IdRequest(id=(i % 100) + 1))
+            r = await stub.ListPlaylistsBySong(pb2.IdRequest(id=(i % 1000) + 1))
             return r.ByteSize()
         r1 = await stub.CreateUser(pb2.CreateUserRequest(name=f"Bench gRPC {i}", age=24))
         r2 = await stub.UpdateUser(pb2.UpdateUserRequest(id=r1.id, name=f"Bench gRPC Upd {i}", age=25))
@@ -409,19 +413,19 @@ SERVICES = [
     ("node-grpc", "Node.js (TS)", "gRPC", "node-grpc:50052"),
 ]
 
-# Matriz de cenários: 3 cargas em W1 + carga moderada em W2 e W3
+# Matriz de cenários: 3 cargas em W1 (até centenas de usuários: 50, 200, 400 VUs) + 100 VUs em W2 e W3
 TEST_MATRIX = [
-    ("W1_list_songs", 10),
     ("W1_list_songs", 50),
-    ("W1_list_songs", 100),
-    ("W2_relational_profile", 50),
-    ("W3_mixed_crud", 50),
+    ("W1_list_songs", 200),
+    ("W1_list_songs", 400),
+    ("W2_relational_profile", 100),
+    ("W3_mixed_crud", 100),
 ]
 
 
 async def run_all(duration_s: float, warmup_s: float, runs: int):
     results: List[ScenarioMetrics] = []
-    limits = httpx.Limits(max_connections=200, max_keepalive_connections=120)
+    limits = httpx.Limits(max_connections=500, max_keepalive_connections=400)
 
     print("=" * 115)
     print(f"INICIANDO TESTES DE CARGA (duration={duration_s}s x {runs} runs, warmup={warmup_s}s)")
@@ -429,15 +433,25 @@ async def run_all(duration_s: float, warmup_s: float, runs: int):
 
     for service_id, language, protocol, endpoint in SERVICES:
         if protocol == "gRPC":
-            async with grpc.aio.insecure_channel(endpoint) as channel:
-                stub = pb2_grpc.MusicStreamingServiceStub(channel)
-                ops = make_grpc_ops(stub)
+            channels = [
+                grpc.aio.insecure_channel(
+                    endpoint,
+                    options=[("grpc.use_local_subchannel_pool", 1)],
+                )
+                for _ in range(4)
+            ]
+            stubs = [pb2_grpc.MusicStreamingServiceStub(ch) for ch in channels]
+            ops = make_grpc_ops(stubs)
+            try:
                 for workload, vus in TEST_MATRIX:
                     m = await run_load_scenario(
                         ops[workload], service_id, language, protocol, workload, vus, warmup_s, duration_s, runs
                     )
                     results.append(m)
                     await asyncio.sleep(0.5)
+            finally:
+                for ch in channels:
+                    await ch.close()
         else:
             base = endpoint if protocol == "REST" else ""
             async with httpx.AsyncClient(base_url=base, limits=limits, timeout=30.0) as client:
@@ -472,7 +486,7 @@ async def run_all(duration_s: float, warmup_s: float, runs: int):
                     "duration_s": duration_s,
                     "warmup_s": warmup_s,
                     "runs": runs,
-                    "dataset": {"users": 50, "songs": 100, "playlists": 120},
+                    "dataset": {"users": 500, "songs": 1000, "playlists": 1000, "attrs_per_entity": "6-7"},
                     "database": "PostgreSQL 16 (Docker, pool max=20)",
                     "container_limits": {"cpus": 1.0, "memory": "512m"},
                 },

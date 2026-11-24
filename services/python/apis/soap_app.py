@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, Request, Response
 from lxml import etree
 
@@ -35,6 +35,14 @@ def _get_text(el: etree._Element, field: str) -> str:
     return ""
 
 
+def _get_opt_text(el: etree._Element, field: str) -> Optional[str]:
+    for child in el:
+        if _local_name(child.tag) == field:
+            val = (child.text or "").strip()
+            return val if val else None
+    return None
+
+
 def _get_int(el: etree._Element, field: str) -> int:
     val = _get_text(el, field)
     if not val:
@@ -43,6 +51,28 @@ def _get_int(el: etree._Element, field: str) -> int:
         return int(val)
     except ValueError as exc:
         raise db.ValidationError(f"Invalid integer for field '{field}': {val}") from exc
+
+
+def _get_opt_int(el: etree._Element, field: str) -> Optional[int]:
+    val = _get_opt_text(el, field)
+    if val is None:
+        return None
+    try:
+        return int(val)
+    except ValueError as exc:
+        raise db.ValidationError(f"Invalid integer for field '{field}': {val}") from exc
+
+
+def _get_opt_bool(el: etree._Element, field: str) -> Optional[bool]:
+    val = _get_opt_text(el, field)
+    if val is None:
+        return None
+    low = val.lower()
+    if low in ("true", "1"):
+        return True
+    if low in ("false", "0"):
+        return False
+    raise db.ValidationError(f"Invalid boolean for field '{field}': {val}")
 
 
 def _get_int_list(el: etree._Element, field: str) -> List[int]:
@@ -62,6 +92,10 @@ def _append_user(parent: etree._Element, tag: str, u: Dict[str, Any]) -> None:
     etree.SubElement(el, f"{{{TNS}}}id").text = str(u["id"])
     etree.SubElement(el, f"{{{TNS}}}name").text = str(u["name"])
     etree.SubElement(el, f"{{{TNS}}}age").text = str(u["age"])
+    etree.SubElement(el, f"{{{TNS}}}email").text = str(u["email"])
+    etree.SubElement(el, f"{{{TNS}}}country").text = str(u["country"])
+    etree.SubElement(el, f"{{{TNS}}}planType").text = str(u["plan_type"])
+    etree.SubElement(el, f"{{{TNS}}}createdAt").text = str(u["created_at"])
 
 
 def _append_song(parent: etree._Element, tag: str, s: Dict[str, Any]) -> None:
@@ -69,6 +103,10 @@ def _append_song(parent: etree._Element, tag: str, s: Dict[str, Any]) -> None:
     etree.SubElement(el, f"{{{TNS}}}id").text = str(s["id"])
     etree.SubElement(el, f"{{{TNS}}}name").text = str(s["name"])
     etree.SubElement(el, f"{{{TNS}}}artist").text = str(s["artist"])
+    etree.SubElement(el, f"{{{TNS}}}album").text = str(s["album"])
+    etree.SubElement(el, f"{{{TNS}}}genre").text = str(s["genre"])
+    etree.SubElement(el, f"{{{TNS}}}durationSec").text = str(s["duration_sec"])
+    etree.SubElement(el, f"{{{TNS}}}releaseYear").text = str(s["release_year"])
 
 
 def _append_playlist(parent: etree._Element, tag: str, p: Dict[str, Any]) -> None:
@@ -76,6 +114,9 @@ def _append_playlist(parent: etree._Element, tag: str, p: Dict[str, Any]) -> Non
     etree.SubElement(el, f"{{{TNS}}}id").text = str(p["id"])
     etree.SubElement(el, f"{{{TNS}}}name").text = str(p["name"])
     etree.SubElement(el, f"{{{TNS}}}userId").text = str(p["user_id"])
+    etree.SubElement(el, f"{{{TNS}}}description").text = str(p["description"])
+    etree.SubElement(el, f"{{{TNS}}}isPublic").text = "true" if p["is_public"] else "false"
+    etree.SubElement(el, f"{{{TNS}}}createdAt").text = str(p["created_at"])
     for s in p.get("songs", []):
         _append_song(el, "songs", s)
 
@@ -118,7 +159,6 @@ async def soap_endpoint(request: Request):
 
         op_el = body[0]
         op_name = _local_name(op_el.tag)
-        # Aceita tanto "ListUsersRequest" quanto "ListUsers"
         op_key = op_name[:-7] if op_name.endswith("Request") else op_name
 
         if op_key == "ListUsers":
@@ -133,13 +173,24 @@ async def soap_endpoint(request: Request):
             _append_user(resp, "user", user)
 
         elif op_key == "CreateUser":
-            user = await db.create_user(_get_text(op_el, "name"), _get_int(op_el, "age"))
+            user = await db.create_user(
+                _get_text(op_el, "name"),
+                _get_int(op_el, "age"),
+                _get_opt_text(op_el, "email"),
+                _get_opt_text(op_el, "country"),
+                _get_opt_text(op_el, "planType"),
+            )
             env, resp = _wrap_envelope("CreateUserResponse")
             _append_user(resp, "user", user)
 
         elif op_key == "UpdateUser":
             user = await db.update_user(
-                _get_int(op_el, "id"), _get_text(op_el, "name"), _get_int(op_el, "age")
+                _get_int(op_el, "id"),
+                _get_text(op_el, "name"),
+                _get_int(op_el, "age"),
+                _get_opt_text(op_el, "email"),
+                _get_opt_text(op_el, "country"),
+                _get_opt_text(op_el, "planType"),
             )
             env, resp = _wrap_envelope("UpdateUserResponse")
             _append_user(resp, "user", user)
@@ -161,13 +212,26 @@ async def soap_endpoint(request: Request):
             _append_song(resp, "song", song)
 
         elif op_key == "CreateSong":
-            song = await db.create_song(_get_text(op_el, "name"), _get_text(op_el, "artist"))
+            song = await db.create_song(
+                _get_text(op_el, "name"),
+                _get_text(op_el, "artist"),
+                _get_opt_text(op_el, "album"),
+                _get_opt_text(op_el, "genre"),
+                _get_opt_int(op_el, "durationSec"),
+                _get_opt_int(op_el, "releaseYear"),
+            )
             env, resp = _wrap_envelope("CreateSongResponse")
             _append_song(resp, "song", song)
 
         elif op_key == "UpdateSong":
             song = await db.update_song(
-                _get_int(op_el, "id"), _get_text(op_el, "name"), _get_text(op_el, "artist")
+                _get_int(op_el, "id"),
+                _get_text(op_el, "name"),
+                _get_text(op_el, "artist"),
+                _get_opt_text(op_el, "album"),
+                _get_opt_text(op_el, "genre"),
+                _get_opt_int(op_el, "durationSec"),
+                _get_opt_int(op_el, "releaseYear"),
             )
             env, resp = _wrap_envelope("UpdateSongResponse")
             _append_song(resp, "song", song)
@@ -187,6 +251,8 @@ async def soap_endpoint(request: Request):
                 _get_int(op_el, "userId"),
                 _get_text(op_el, "name"),
                 _get_int_list(op_el, "songIds"),
+                _get_opt_text(op_el, "description"),
+                _get_opt_bool(op_el, "isPublic"),
             )
             env, resp = _wrap_envelope("CreatePlaylistResponse")
             _append_playlist(resp, "playlist", pl)
@@ -197,6 +263,8 @@ async def soap_endpoint(request: Request):
                 _get_int(op_el, "id"),
                 _get_text(op_el, "name"),
                 song_ids if song_ids else None,
+                _get_opt_text(op_el, "description"),
+                _get_opt_bool(op_el, "isPublic"),
             )
             env, resp = _wrap_envelope("UpdatePlaylistResponse")
             _append_playlist(resp, "playlist", pl)

@@ -7,7 +7,7 @@ Trabalho da disciplina **Computação Distribuída** (Prof. Nabor C. Mendonça) 
 ## Arquitetura do Projeto
 
 Todas as 8 implementações compartilham:
-- O mesmo banco de dados **PostgreSQL 16** (`db/init.sql`) com schema normalizado (`users`, `songs`, `playlists`, `playlist_songs`) e dataset determinístico pré-populado (**50 usuários**, **100 músicas**, **120 playlists**, ~960 associações).
+- O mesmo banco de dados **PostgreSQL 16** (`db/init.sql`) com schema normalizado (`users`, `songs`, `playlists`, `playlist_songs`), **6–7 atributos por entidade** e dataset determinístico em escala (**500 usuários**, **1.000 músicas**, **1.000 playlists**, ~10.000 associações).
 - Os mesmos contratos formais em `contracts/`:
   - `contracts/music_streaming.wsdl` (WSDL 1.1 compartilhado entre Python SOAP e Node.js SOAP)
   - `contracts/schema.graphql` (Schema SDL compartilhado entre Python GraphQL e Node.js GraphQL)

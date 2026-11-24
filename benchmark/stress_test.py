@@ -37,7 +37,7 @@ SOAP_LIST_SONGS_BODY = (
     f"</soap:Envelope>"
 ).encode("utf-8")
 
-GQL_LIST_SONGS_PAYLOAD = {"query": "{ songs { id name artist } }"}
+GQL_LIST_SONGS_PAYLOAD = {"query": "{ songs { id name artist album genre durationSec releaseYear } }"}
 
 STEPS = [10, 25, 50, 100, 200, 350, 500, 750, 1000]
 P95_BREAK_MS = 3000.0

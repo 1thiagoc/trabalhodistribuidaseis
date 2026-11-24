@@ -24,6 +24,22 @@ function parseIntField(val: unknown, field: string): number {
   return n;
 }
 
+function parseOptInt(val: unknown, field: string): number | undefined {
+  if (val === undefined || val === null || val === "") return undefined;
+  return parseIntField(val, field);
+}
+
+function parseOptStr(val: unknown): string | undefined {
+  if (val === undefined || val === null) return undefined;
+  return String(val);
+}
+
+function parseOptBool(val: unknown, field: string): boolean | undefined {
+  if (val === undefined || val === null) return undefined;
+  if (typeof val === "boolean") return val;
+  throw new db.ValidationError(`Invalid boolean for field '${field}': ${val}`);
+}
+
 function requireBody<T extends Record<string, unknown>>(body: unknown): T {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     throw new db.ValidationError("Request body must be a JSON object");
@@ -54,10 +70,13 @@ app.get<{ Params: { id: string } }>("/users/:id", async (req, reply) => {
 
 app.post("/users", async (req, reply) => {
   try {
-    const body = requireBody<{ name: unknown; age: unknown }>(req.body);
+    const body = requireBody<Record<string, unknown>>(req.body);
     const user = await db.createUser(
       String(body.name ?? ""),
-      parseIntField(body.age, "age")
+      parseIntField(body.age, "age"),
+      parseOptStr(body.email),
+      parseOptStr(body.country),
+      parseOptStr(body.plan_type)
     );
     return reply.code(201).send(user);
   } catch (err) {
@@ -67,11 +86,14 @@ app.post("/users", async (req, reply) => {
 
 app.put<{ Params: { id: string } }>("/users/:id", async (req, reply) => {
   try {
-    const body = requireBody<{ name: unknown; age: unknown }>(req.body);
+    const body = requireBody<Record<string, unknown>>(req.body);
     return await db.updateUser(
       parseIntField(req.params.id, "id"),
       String(body.name ?? ""),
-      parseIntField(body.age, "age")
+      parseIntField(body.age, "age"),
+      parseOptStr(body.email),
+      parseOptStr(body.country),
+      parseOptStr(body.plan_type)
     );
   } catch (err) {
     return handleError(reply, err);
@@ -89,7 +111,6 @@ app.delete<{ Params: { id: string } }>("/users/:id", async (req, reply) => {
   }
 });
 
-// Consulta #3: Listar todas as playlists de um usuário
 app.get<{ Params: { id: string } }>(
   "/users/:id/playlists",
   async (req, reply) => {
@@ -115,10 +136,14 @@ app.get<{ Params: { id: string } }>("/songs/:id", async (req, reply) => {
 
 app.post("/songs", async (req, reply) => {
   try {
-    const body = requireBody<{ name: unknown; artist: unknown }>(req.body);
+    const body = requireBody<Record<string, unknown>>(req.body);
     const song = await db.createSong(
       String(body.name ?? ""),
-      String(body.artist ?? "")
+      String(body.artist ?? ""),
+      parseOptStr(body.album),
+      parseOptStr(body.genre),
+      parseOptInt(body.duration_sec, "duration_sec"),
+      parseOptInt(body.release_year, "release_year")
     );
     return reply.code(201).send(song);
   } catch (err) {
@@ -128,11 +153,15 @@ app.post("/songs", async (req, reply) => {
 
 app.put<{ Params: { id: string } }>("/songs/:id", async (req, reply) => {
   try {
-    const body = requireBody<{ name: unknown; artist: unknown }>(req.body);
+    const body = requireBody<Record<string, unknown>>(req.body);
     return await db.updateSong(
       parseIntField(req.params.id, "id"),
       String(body.name ?? ""),
-      String(body.artist ?? "")
+      String(body.artist ?? ""),
+      parseOptStr(body.album),
+      parseOptStr(body.genre),
+      parseOptInt(body.duration_sec, "duration_sec"),
+      parseOptInt(body.release_year, "release_year")
     );
   } catch (err) {
     return handleError(reply, err);
@@ -150,7 +179,6 @@ app.delete<{ Params: { id: string } }>("/songs/:id", async (req, reply) => {
   }
 });
 
-// Consulta #5: Listar todas as playlists que contêm uma música
 app.get<{ Params: { id: string } }>(
   "/songs/:id/playlists",
   async (req, reply) => {
@@ -174,15 +202,13 @@ app.get<{ Params: { id: string } }>("/playlists/:id", async (req, reply) => {
 
 app.post("/playlists", async (req, reply) => {
   try {
-    const body = requireBody<{
-      name: unknown;
-      user_id: unknown;
-      song_ids: unknown;
-    }>(req.body);
+    const body = requireBody<Record<string, unknown>>(req.body);
     const pl = await db.createPlaylist(
       parseIntField(body.user_id, "user_id"),
       String(body.name ?? ""),
-      parseIntArray(body.song_ids, "song_ids")
+      parseIntArray(body.song_ids, "song_ids"),
+      parseOptStr(body.description),
+      parseOptBool(body.is_public, "is_public")
     );
     return reply.code(201).send(pl);
   } catch (err) {
@@ -192,7 +218,7 @@ app.post("/playlists", async (req, reply) => {
 
 app.put<{ Params: { id: string } }>("/playlists/:id", async (req, reply) => {
   try {
-    const body = requireBody<{ name: unknown; song_ids?: unknown }>(req.body);
+    const body = requireBody<Record<string, unknown>>(req.body);
     const songIds =
       body.song_ids !== undefined && body.song_ids !== null
         ? parseIntArray(body.song_ids, "song_ids")
@@ -200,7 +226,9 @@ app.put<{ Params: { id: string } }>("/playlists/:id", async (req, reply) => {
     return await db.updatePlaylist(
       parseIntField(req.params.id, "id"),
       String(body.name ?? ""),
-      songIds
+      songIds,
+      parseOptStr(body.description),
+      parseOptBool(body.is_public, "is_public")
     );
   } catch (err) {
     return handleError(reply, err);
@@ -219,7 +247,6 @@ app.delete<{ Params: { id: string } }>("/playlists/:id", async (req, reply) => {
   }
 });
 
-// Consulta #4: Listar todas as músicas de uma playlist
 app.get<{ Params: { id: string } }>(
   "/playlists/:id/songs",
   async (req, reply) => {

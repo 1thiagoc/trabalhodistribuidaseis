@@ -9,22 +9,33 @@ from common import db
 class UserIn(BaseModel):
     name: str
     age: int = Field(ge=0)
+    email: Optional[str] = None
+    country: Optional[str] = "BR"
+    plan_type: Optional[str] = "free"
 
 
 class SongIn(BaseModel):
     name: str
     artist: str
+    album: Optional[str] = "Single"
+    genre: Optional[str] = "Pop"
+    duration_sec: Optional[int] = Field(default=180, gt=0)
+    release_year: Optional[int] = Field(default=2024, ge=1900)
 
 
 class PlaylistCreateIn(BaseModel):
     name: str
     user_id: int
     song_ids: List[int] = Field(min_length=1)
+    description: Optional[str] = ""
+    is_public: Optional[bool] = True
 
 
 class PlaylistUpdateIn(BaseModel):
     name: str
     song_ids: Optional[List[int]] = None
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
 
 
 @asynccontextmanager
@@ -36,7 +47,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Music Streaming API — Python REST",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -72,7 +83,9 @@ async def get_user(user_id: int):
 @app.post("/users", status_code=status.HTTP_201_CREATED)
 async def create_user(payload: UserIn):
     try:
-        return await db.create_user(payload.name, payload.age)
+        return await db.create_user(
+            payload.name, payload.age, payload.email, payload.country, payload.plan_type
+        )
     except Exception as exc:
         _handle_error(exc)
 
@@ -80,7 +93,9 @@ async def create_user(payload: UserIn):
 @app.put("/users/{user_id}")
 async def update_user(user_id: int, payload: UserIn):
     try:
-        return await db.update_user(user_id, payload.name, payload.age)
+        return await db.update_user(
+            user_id, payload.name, payload.age, payload.email, payload.country, payload.plan_type
+        )
     except Exception as exc:
         _handle_error(exc)
 
@@ -93,7 +108,6 @@ async def delete_user(user_id: int):
     return {"deleted": True}
 
 
-# Consulta #3: Listar todas as playlists de um determinado usuário
 @app.get("/users/{user_id}/playlists")
 async def list_user_playlists(user_id: int):
     try:
@@ -120,7 +134,14 @@ async def get_song(song_id: int):
 @app.post("/songs", status_code=status.HTTP_201_CREATED)
 async def create_song(payload: SongIn):
     try:
-        return await db.create_song(payload.name, payload.artist)
+        return await db.create_song(
+            payload.name,
+            payload.artist,
+            payload.album,
+            payload.genre,
+            payload.duration_sec,
+            payload.release_year,
+        )
     except Exception as exc:
         _handle_error(exc)
 
@@ -128,7 +149,15 @@ async def create_song(payload: SongIn):
 @app.put("/songs/{song_id}")
 async def update_song(song_id: int, payload: SongIn):
     try:
-        return await db.update_song(song_id, payload.name, payload.artist)
+        return await db.update_song(
+            song_id,
+            payload.name,
+            payload.artist,
+            payload.album,
+            payload.genre,
+            payload.duration_sec,
+            payload.release_year,
+        )
     except Exception as exc:
         _handle_error(exc)
 
@@ -144,7 +173,6 @@ async def delete_song(song_id: int):
     return {"deleted": True}
 
 
-# Consulta #5: Listar todas as playlists que contêm uma determinada música
 @app.get("/songs/{song_id}/playlists")
 async def list_playlists_by_song(song_id: int):
     try:
@@ -166,7 +194,9 @@ async def get_playlist(playlist_id: int):
 @app.post("/playlists", status_code=status.HTTP_201_CREATED)
 async def create_playlist(payload: PlaylistCreateIn):
     try:
-        return await db.create_playlist(payload.user_id, payload.name, payload.song_ids)
+        return await db.create_playlist(
+            payload.user_id, payload.name, payload.song_ids, payload.description, payload.is_public
+        )
     except Exception as exc:
         _handle_error(exc)
 
@@ -174,7 +204,9 @@ async def create_playlist(payload: PlaylistCreateIn):
 @app.put("/playlists/{playlist_id}")
 async def update_playlist(playlist_id: int, payload: PlaylistUpdateIn):
     try:
-        return await db.update_playlist(playlist_id, payload.name, payload.song_ids)
+        return await db.update_playlist(
+            playlist_id, payload.name, payload.song_ids, payload.description, payload.is_public
+        )
     except Exception as exc:
         _handle_error(exc)
 
@@ -187,7 +219,6 @@ async def delete_playlist(playlist_id: int):
     return {"deleted": True}
 
 
-# Consulta #4: Listar todas as músicas de uma determinada playlist
 @app.get("/playlists/{playlist_id}/songs")
 async def list_playlist_songs(playlist_id: int):
     try:

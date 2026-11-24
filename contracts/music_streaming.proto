@@ -41,10 +41,15 @@ message DeleteResponse {
   bool deleted = 1;
 }
 
+// 7 atributos
 message User {
   int32 id = 1;
   string name = 2;
   int32 age = 3;
+  string email = 4;
+  string country = 5;
+  string plan_type = 6;
+  string created_at = 7;
 }
 
 message UserList {
@@ -54,18 +59,29 @@ message UserList {
 message CreateUserRequest {
   string name = 1;
   int32 age = 2;
+  string email = 3;
+  string country = 4;
+  string plan_type = 5;
 }
 
 message UpdateUserRequest {
   int32 id = 1;
   string name = 2;
   int32 age = 3;
+  string email = 4;
+  string country = 5;
+  string plan_type = 6;
 }
 
+// 7 atributos
 message Song {
   int32 id = 1;
   string name = 2;
   string artist = 3;
+  string album = 4;
+  string genre = 5;
+  int32 duration_sec = 6;
+  int32 release_year = 7;
 }
 
 message SongList {
@@ -75,19 +91,31 @@ message SongList {
 message CreateSongRequest {
   string name = 1;
   string artist = 2;
+  string album = 3;
+  string genre = 4;
+  int32 duration_sec = 5;
+  int32 release_year = 6;
 }
 
 message UpdateSongRequest {
   int32 id = 1;
   string name = 2;
   string artist = 3;
+  string album = 4;
+  string genre = 5;
+  int32 duration_sec = 6;
+  int32 release_year = 7;
 }
 
+// 6 atributos escalares + songs
 message Playlist {
   int32 id = 1;
   string name = 2;
   int32 user_id = 3;
-  repeated Song songs = 4;
+  string description = 4;
+  bool is_public = 5;
+  string created_at = 6;
+  repeated Song songs = 7;
 }
 
 message PlaylistList {
@@ -98,12 +126,16 @@ message CreatePlaylistRequest {
   string name = 1;
   int32 user_id = 2;
   repeated int32 song_ids = 3;
+  string description = 4;
+  bool is_public = 5;
 }
 
 message UpdatePlaylistRequest {
   int32 id = 1;
   string name = 2;
   repeated int32 song_ids = 3;
+  string description = 4;
+  bool is_public = 5;
 }
 
 message PlaylistSongRequest {
